@@ -10,8 +10,9 @@ requires-python = ">=3.12"
 dependencies = [
     "jax>=0.12.0.1",
     "matplotlib>=3.11.2",
+    "numpy>=2.5.4",
     "pandas>=3.1.1",
-    "requests[data]>=2.34.2",
+    "requests>=2.34.2",
     "scikit-learn>=1.9.1",
 ]
 
@@ -20,9 +21,8 @@ app = [
     "streamlit>=1.67.0",
 ]
 data = [
-    "numpy>=2.5.4",
-    "tqdm[data]>=4.70.1",
-    "yfinance[data]>=1.8.0",
+    "tqdm>=4.70.1",
+    "yfinance>=1.8.0",
 ]
 
 [build-system]
