@@ -17,19 +17,24 @@ def clean_structurally(df: pd.DataFrame) -> pd.DataFrame:
 
 def clean_nans(
     df: pd.DataFrame,
-    max_missing_per_date: float = 0.5,
+    start_date: str = "2006-01-01",
     max_missing_per_share: float = 0.02,
+    max_missing_per_date: float = 0.2,
 ) -> pd.DataFrame:
-    """Remove dates with too many NaNs, then remove tickers with too high of a proportion of NaNs"""
+    """Keep dates from start_date on, then keep tickers with (nearly) complete history"""
 
-    missing_proportion_per_date = df.isna().mean(axis=1)
-    df = df[missing_proportion_per_date < max_missing_per_date]
+    df = df.loc[start_date:]  # fixed start so the 2008 crisis falls out of sample
 
     missing_proportion_per_ticker = df.isna().mean(axis=0)
     df = df.loc[:, missing_proportion_per_ticker < max_missing_per_share]
 
+    # Among the kept tickers a normal trading day has ~0 missing, so this only
+    # removes (partial) exchange holidays, which ffill would turn into zero returns
+    missing_proportion_per_date = df.isna().mean(axis=1)
+    df = df[missing_proportion_per_date < max_missing_per_date]
+
     df = df.ffill(limit=3)  # Limit the forward fills to just 3 days
-    df = df.dropna(axis=1)  # remove remaining tickers with missing data
+    df = df.dropna(axis=1)  # drops later listings (leading NaNs) and longer gaps
     assert not df.isna().any().any()
 
     return df
@@ -67,29 +72,29 @@ def validate_logreturns(df: pd.DataFrame):
 
 
 if __name__ == "__main__":
-    market = ("sp500", "euronext")
+    markets = ("sp500", "euronext")
     interval = ("daily", "5min")
 
     data_path = Path(__file__).resolve().parent.parent / "data"
-    target_name = f"{market[0]}_{interval[0]}.csv"
-    raw_data = pd.read_csv(
-        data_path / f"raw_{target_name}",
-        header=[0, 1],  # raw data columns are MultiIndex with two levels
-        index_col=0,
-        parse_dates=True,
-    )
-    raw_close_data = raw_data["Close"]
+    
+    for market in markets:
+        target_name = f"{market}_{interval[0]}.csv"
+        raw_data = pd.read_csv(
+            data_path / f"raw_{target_name}",
+            header=[0, 1],  # raw data columns are MultiIndex with two levels
+            index_col=0,
+            parse_dates=True,
+        )
+        raw_close_data = raw_data["Close"]
 
-    data = clean_structurally(raw_close_data)
-    data = clean_nans(
-        data, max_missing_per_date=0.2, max_missing_per_share=0.02  # arbitrary number
-    )
+        data = clean_structurally(raw_close_data)
+        data = clean_nans(data, start_date="2006-01-01", max_missing_per_share=0.02)
 
-    log_prices = np.log(data.values)
-    log_returns = np.diff(log_prices, axis=0)
-    log_returns = pd.DataFrame(log_returns, index=data.index[1:], columns=data.columns)
-    log_returns = clean_stale_tickers(log_returns, stale_ratio=0.05)
+        log_prices = np.log(data.values)
+        log_returns = np.diff(log_prices, axis=0)
+        log_returns = pd.DataFrame(log_returns, index=data.index[1:], columns=data.columns)
+        log_returns = clean_stale_tickers(log_returns, stale_ratio=0.05)
 
-    validate_logreturns(log_returns)
+        validate_logreturns(log_returns)
 
-    # log_returns.to_csv(data_path / f"logret_{target_name}")
+        log_returns.to_csv(data_path / f"logret_{target_name}")
