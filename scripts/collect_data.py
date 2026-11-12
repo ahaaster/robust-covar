@@ -7,6 +7,8 @@ import yfinance as yf
 from tqdm import tqdm
 from pathlib import Path
 
+PROJECT_DIR = Path(__file__).resolve().parents[1]
+
 url_sp500 = (
     "https://en.wikipedia.org/wiki/List_of_S&P_500_companies#S&P_500_component_stocks"
 )
@@ -37,7 +39,7 @@ def download_data(tickers: pd.Series, period: str, interval: str) -> pd.Series:
 
 def fetch_sectors(
     tickers,
-    target_path: Path = Path(__file__).resolve().parent.parent / "data" / "sectors.csv",
+    target_path: Path = PROJECT_DIR / "data" / "sectors.csv",
 ):
     df = (
         pd.read_csv(target_path, index_col=0)

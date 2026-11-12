@@ -75,8 +75,8 @@ if __name__ == "__main__":
     markets = ("sp500", "euronext")
     interval = ("daily", "5min")
 
-    data_path = Path(__file__).resolve().parent.parent / "data"
-    
+    data_path = Path(__file__).resolve().parents[1] / "data"
+
     for market in markets:
         target_name = f"{market}_{interval[0]}.csv"
         raw_data = pd.read_csv(
@@ -92,7 +92,9 @@ if __name__ == "__main__":
 
         log_prices = np.log(data.values)
         log_returns = np.diff(log_prices, axis=0)
-        log_returns = pd.DataFrame(log_returns, index=data.index[1:], columns=data.columns)
+        log_returns = pd.DataFrame(
+            log_returns, index=data.index[1:], columns=data.columns
+        )
         log_returns = clean_stale_tickers(log_returns, stale_ratio=0.05)
 
         validate_logreturns(log_returns)

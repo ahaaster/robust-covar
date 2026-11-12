@@ -13,7 +13,7 @@ def save_the_universe(file_path: Path, tickers: list) -> None:
 
 
 if __name__ == "__main__":
-    work_dir = Path(__file__).resolve().parent.parent
+    work_dir = Path(__file__).resolve().parents[1]
     data_path = work_dir / "data"
     universe_path = work_dir / "universe"
     random.seed(SEED)

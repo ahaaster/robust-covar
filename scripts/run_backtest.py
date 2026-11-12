@@ -2,14 +2,15 @@ import argparse
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from sqlite3 import Connection, connect
+from sqlite3 import Connection
 
-from robust_covar.core import sample_cov, backtest
-from robust_covar.storage import write_results, create_schema, read_rebalance
+from robust_covar.core import sample_cov, backtest, ledoit_wolf_cov
+from robust_covar.storage import connect, write_results, create_schema, read_rebalance
 
-PROJECT_DIR = Path(__file__).resolve().parent.parent
+PROJECT_DIR = Path(__file__).resolve().parents[1]  # scripts/ -> repo root
+PATH_DB = PROJECT_DIR / "results" / "backtest.sqlite"
 MARKETS = {"euronext": "euronext", "sp500": "sp500"}
-ESTIMATORS = {"sample": sample_cov}
+ESTIMATORS = {"sample": sample_cov, "ledoit_wolf": ledoit_wolf_cov}
 
 
 def run(market: str, estimator_name: str, con):
@@ -19,7 +20,7 @@ def run(market: str, estimator_name: str, con):
     tickers = PROJECT_DIR / f"universe/{market}.csv"
     tickers = tickers.read_text().strip().rstrip(",").split(",")
     logret = logret[tickers]
-    print(f"Market date check: {logret.index[0], logret.index[-1], len(logret)}")
+    # print(f"Market date check: {logret.index[0], logret.index[-1], len(logret)}")
 
     rebalance_dates, holding_dates, results = backtest(
         logret.to_numpy(), logret.index, {estimator_name: ESTIMATORS[estimator_name]}
@@ -47,7 +48,7 @@ def main():
     parser.add_argument("--estimator", nargs="+", default=list(ESTIMATORS))
     args = parser.parse_args()
 
-    con = connect(Path("results/backtest.sqlite"))
+    con = connect(PATH_DB)
     create_schema(con)
 
     try:
@@ -59,8 +60,8 @@ def main():
                 )
                 print(
                     f"{market:9} {estimator_name:8} n={len(results):4}  "
-                    f"vol={results["realised_vol"].mean():.3f}  "
-                    f"lev={results["gross_leverage"].mean():.2f}"
+                    f"vol={results['realised_vol'].mean():.3f}  "
+                    f"lev={results['gross_leverage'].mean():.2f}"
                 )
     finally:
         con.close()
