@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 authors = [
-    { name = "Arnaud van Haaster", email = "python-projects.w5kvc@passmail.net" }
+    { name = "Arnaud van Haaster", email = "git.8gsk7@passmail.net" }
 ]
 requires-python = ">=3.12"
 dependencies = [
@@ -34,6 +34,7 @@ dev = [
     "black>=26.10.1",
     "pytest>=9.2.0",
     "ruff>=0.17.4",
+    "tabulate>=0.10.0",
 ]
 
 [tool.black]

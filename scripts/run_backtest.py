@@ -10,7 +10,11 @@ from robust_covar.storage import connect, write_results, create_schema, read_reb
 PROJECT_DIR = Path(__file__).resolve().parents[1]  # scripts/ -> repo root
 PATH_DB = PROJECT_DIR / "results" / "backtest.sqlite"
 MARKETS = {"euronext": "euronext", "sp500": "sp500"}
-ESTIMATORS = {"sample": sample_cov, "ledoit_wolf": ledoit_wolf_cov, "robust": robust_covar}
+ESTIMATORS = {
+    "sample": sample_cov,
+    "ledoit_wolf": ledoit_wolf_cov,
+    "robust": robust_covar,
+}
 
 
 def run(market: str, estimator_name: str, con):

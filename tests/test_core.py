@@ -4,6 +4,7 @@ import pandas as pd
 
 from sklearn.covariance import LedoitWolf
 
+from robust_covar.core import QN_CONSTANT
 from robust_covar.core import sample_cov, min_variance, backtest
 from robust_covar.core import ledoit_wolf_cov, calc_qn, gk_corr
 from robust_covar.core import positive_semidef_corr, robust_covar
@@ -85,7 +86,7 @@ def test_qn_exact_small_sample():
     """Hand-computed: T=4 -> h=3, k=3. Pairwise distances of [0, 1, 3, 7] sorted
     are 1, 2, 3, 4, 6, 7, so the 3rd smallest is 3. Catches a wrong k
     (off-by-one gives 2 or 4) and a wrong consistency constant."""
-    assert np.isclose(calc_qn(np.array([0.0, 1.0, 3.0, 7.0]))[0], 3 * 2.2191)
+    assert np.isclose(calc_qn(np.array([0.0, 1.0, 3.0, 7.0]))[0], 3 * QN_CONSTANT)
 
 
 def test_gk_corr_estimates_rho(rng):

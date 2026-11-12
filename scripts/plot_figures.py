@@ -6,8 +6,8 @@ import pandas as pd
 from pathlib import Path
 from sqlite3 import Connection
 
-from robust_covar.plots import plot_relative_volatility, plot_volatility
-from robust_covar.storage import connect, read_daily_returns
+from robust_covar.plots import plot_relative_volatility, plot_volatility, summary_table
+from robust_covar.storage import connect, read_daily_returns, read_rebalance
 
 PROJECT_DIR = Path(__file__).resolve().parents[1]
 PATH_FIG = PROJECT_DIR / "figures"
@@ -49,15 +49,23 @@ def plot_market(con: Connection, market: str) -> Path | None:
     )
     axes = axes[:, 0]
 
-    plot_volatility(daily_ret, axes[0])
+    plot_volatility(daily_ret, axes[0], window=63)
     axes[0].set_title(f"{market}: minimum-variance portfolio")
     if has_relative:
-        plot_relative_volatility(daily_ret, axes[1], base=BASE_ESTIMATOR)
+        plot_relative_volatility(daily_ret, axes[1], base=BASE_ESTIMATOR, window=63)
 
     fig.tight_layout()
     fig_path = PATH_FIG / f"volatility_{market}.png"
     fig.savefig(fig_path, dpi=150)
     plt.close(fig)
+
+    start, end = daily_ret.index[0], daily_ret.index[-1]
+    rebalances = read_rebalance(con, market, estimators, start, end)
+    summary = summary_table(daily_ret, rebalances)
+    summary_md = summary.to_markdown()
+    # Save the summary to markdown file
+    (PATH_FIG / f"summary_{market}.md").write_text(summary_md)
+
     return fig_path
 
 
