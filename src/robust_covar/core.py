@@ -1,7 +1,14 @@
+import jax
 import numpy as np
 import pandas as pd
+import jax.numpy as jnp
 
+from jax import lax, vmap
+from functools import partial
 from sklearn.covariance import LedoitWolf
+
+QN_CONSTANT = 2.21914  # = 1 / (sqrt(2) * Phi^-1(5/8))
+MAD_CONSTANT = 1.4826
 
 
 def sample_cov(logret):
@@ -12,23 +19,123 @@ def ledoit_wolf_cov(logret):
     return LedoitWolf().fit(logret).covariance_
 
 
-def q_n(values):
-    raise NotImplementedError
+def median_absolute_deviation(logret, median=None):
+    if median is None:
+        median = jnp.median(logret, axis=0)
+    return MAD_CONSTANT * jnp.median(jnp.abs(logret - median), axis=0)
 
 
-def gk_corr(Z):
-    """Create correlation matrix from Z matric
-    Z = C.T @ C / number_observations
-    """
-    raise NotImplementedError
+def qn_scale(series, bisection_steps: int = 32):
+    series = jnp.sort(series)
+    T = series.shape[0]
+    halfway = T // 2 + 1  # Just one further over halfway
+    target_pair_count = halfway * (halfway - 1) // 2
+
+    def pairs_within(distance):
+        upper = jnp.searchsorted(series, series + distance, side="right", method="sort")
+        # lower = jnp.searchsorted(series, series - distance, side="left")
+        # return (jnp.sum(upper - lower) - T) // 2
+        return jnp.sum(upper - jnp.arange(T) - 1)
+
+    def bisection_step(_, bounds):
+        low, high = bounds
+        mid = (low + high) / 2
+        enough_pairs = pairs_within(mid) >= target_pair_count
+        return jnp.where(enough_pairs, low, mid), jnp.where(enough_pairs, mid, high)
+
+    low, high = lax.fori_loop(
+        0, bisection_steps, bisection_step, (0.0, series[-1] - series[0])
+    )
+    return high
 
 
-def power_spectral_density_corr(R, epsilon=1e-4):
-    raise NotImplementedError
+# def qn_factor(T):
+#     gauss_factor = 2.2219
+#     small_sample = {
+#         2: 0.399,
+#         3: 0.994,
+#         4: 0.512,
+#         5: 0.844,
+#         6: 0.611,
+#         7: 0.857,
+#         8: 0.669,
+#         9: 0.872,
+#         10: 0.703,
+#         11: 0.886,
+#         12: 0.723,
+#     }
+#     if T in small_sample:
+#         sample = small_sample[T]
+#     elif T % 2 == 1:
+#         sample = T / (T + 1.4)
+#     else:
+#         sample = T / (T + 3.8)
+#     return gauss_factor * sample
+
+batched_qn = jax.jit(vmap(qn_scale, in_axes=1))
 
 
-def robust_covar(X, epsilon=1e-4):
-    raise NotImplementedError
+def calc_qn(logret):
+    logret = jnp.asarray(logret).reshape(logret.shape[0], -1)
+    # factor = qn_factor(logret.shape[0])
+    # return factor * vmap(qn_scale, in_axes=1)(returns)
+    return np.asarray(QN_CONSTANT * batched_qn(logret))
+
+
+""" [PREVIOUS Qn implementation]
+def calc_qn(values, chunk_size: int = 128) -> np.ndarray:
+    # Q_n scale of each column in (T, N) array
+    values = np.atleast_2d(values.T)
+    values = values.astype(np.float32)
+    T = values.shape[1]
+
+    half_way = T // 2 + 1
+    k = half_way * (half_way - 1) // 2
+    row_idx, col_idx = np.triu_indices(T, k=1)
+    scales = np.empty(values.shape[0])
+
+    for start in range(0, values.shape[0], chunk_size):
+        block = values[start : start + chunk_size]
+        pair_distance = np.abs(block[:, row_idx] - block[:, col_idx])
+        kth_smallest = np.partition(pair_distance, k - 1, axis=1)[:, k - 1]
+        scales[start : start + chunk_size] = QN_CONSTANT * kth_smallest
+    return scales
+"""
+
+
+def gk_corr(logret) -> [np.ndarray, np.ndarray]:
+    T, N = logret.shape
+    scales = calc_qn(logret)
+    assert (scales > 0).all()  # Divide by zero precaution
+    standardised = logret / scales
+    pair_i, pair_j = np.triu_indices(N, k=1)
+
+    sum_series = standardised[:, pair_i] + standardised[:, pair_j]
+    diff_series = standardised[:, pair_i] - standardised[:, pair_j]
+    squared_qn_sum = calc_qn(sum_series) ** 2
+    squared_qn_diff = calc_qn(diff_series) ** 2
+
+    corr = np.eye(N)
+    corr[pair_i, pair_j] = (squared_qn_sum - squared_qn_diff) / (
+        squared_qn_sum + squared_qn_diff
+    )
+    corr[pair_j, pair_i] = corr[pair_i, pair_j]
+    return corr, scales
+
+
+def positive_semidef_corr(corr, epsilon=1e-4):
+    eigval, eigvec = np.linalg.eigh(corr)
+    diag_floored = np.diag(np.maximum(eigval, epsilon))
+    arr = eigvec @ diag_floored @ eigvec.T
+
+    inverse_sqrt_diag = 1 / np.sqrt(np.diag(arr))
+    return arr * np.outer(inverse_sqrt_diag, inverse_sqrt_diag)
+
+
+def robust_covar(logret, epsilon=1e-4):
+    corr, scales = gk_corr(logret)
+    psd = positive_semidef_corr(corr, epsilon)
+    return psd * np.outer(scales, scales)
 
 
 def min_variance(S):
