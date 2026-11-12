@@ -1,13 +1,15 @@
 import numpy as np
 import pandas as pd
 
-
-def sample_cov(X):
-    return np.cov(X, rowvar=False)
+from sklearn.covariance import LedoitWolf
 
 
-def ledoit_wolf_cov(X):
-    raise NotImplementedError
+def sample_cov(logret):
+    return np.cov(logret, rowvar=False)
+
+
+def ledoit_wolf_cov(logret):
+    return LedoitWolf().fit(logret).covariance_
 
 
 def q_n(values):

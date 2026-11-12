@@ -1,7 +1,10 @@
 import numpy as np
 import pandas as pd
 
+from sklearn.covariance import LedoitWolf
+
 from robust_covar.core import sample_cov, min_variance, backtest
+from robust_covar.core import ledoit_wolf_cov
 
 
 def test_min_variance_diag():
@@ -50,3 +53,18 @@ def test_backtest_no_lookahead():
     first_weights_perturbed = results_perturbed["sample"]["weights"][0]
 
     assert np.allclose(first_weights, first_weights_perturbed)
+
+
+def test_ledoitwolf_matches_formula():
+    rng = np.random.default_rng(0)
+    logret = rng.normal(0, 0.01, size=(200, 10))
+
+    fitted = LedoitWolf().fit(logret)
+    sample = np.cov(logret, rowvar=False, ddof=0)
+    mu = np.trace(sample) / sample.shape[0]
+
+    delta = fitted.shrinkage_
+    expected = (1 - delta) * sample + delta * mu * np.eye(10)
+
+    assert 0 <= delta, +1
+    assert np.allclose(ledoit_wolf_cov(logret), expected)
