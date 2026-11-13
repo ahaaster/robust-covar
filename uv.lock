@@ -1608,14 +1608,13 @@ wheels = [
 
 [[package]]
 name = "robust-covar"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "jax" },
     { name = "matplotlib" },
     { name = "numpy" },
     { name = "pandas" },
-    { name = "requests" },
     { name = "scikit-learn" },
 ]
 
@@ -1624,6 +1623,7 @@ app = [
     { name = "streamlit" },
 ]
 data = [
+    { name = "requests" },
     { name = "tqdm" },
     { name = "yfinance" },
 ]
@@ -1642,7 +1642,7 @@ requires-dist = [
     { name = "matplotlib", specifier = ">=3.11.2" },
     { name = "numpy", specifier = ">=2.5.4" },
     { name = "pandas", specifier = ">=3.1.1" },
-    { name = "requests", specifier = ">=2.34.2" },
+    { name = "requests", marker = "extra == 'data'", specifier = ">=2.34.2" },
     { name = "scikit-learn", specifier = ">=1.9.1" },
     { name = "streamlit", marker = "extra == 'app'", specifier = ">=1.67.0" },
     { name = "tqdm", marker = "extra == 'data'", specifier = ">=4.70.1" },

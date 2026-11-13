@@ -6,7 +6,7 @@ import pandas as pd
 from pathlib import Path
 from sqlite3 import Connection
 
-from robust_covar.plots import plot_relative_volatility, plot_volatility, summary_table
+from robust_covar.plots import THEMES, make_volatility_figure, summary_table
 from robust_covar.storage import connect, read_daily_returns, read_rebalance
 
 PROJECT_DIR = Path(__file__).resolve().parents[1]
@@ -41,23 +41,20 @@ def plot_market(con: Connection, market: str) -> Path | None:
         return None
 
     daily_ret = load_daily_returns_wide(con, market, estimators)
-    has_relative = BASE_ESTIMATOR in daily_ret.columns and daily_ret.shape[1] > 1
 
-    n_panels = 2 if has_relative else 1
-    fig, axes = plt.subplots(
-        n_panels, 1, figsize=(10, 3.5 * n_panels), sharex=True, squeeze=False
-    )
-    axes = axes[:, 0]
-
-    plot_volatility(daily_ret, axes[0], window=63)
-    axes[0].set_title(f"{market}: minimum-variance portfolio")
-    if has_relative:
-        plot_relative_volatility(daily_ret, axes[1], base=BASE_ESTIMATOR, window=63)
-
-    fig.tight_layout()
-    fig_path = PATH_FIG / f"volatility_{market}.png"
-    fig.savefig(fig_path, dpi=150)
-    plt.close(fig)
+    # One figure per theme; the README serves the one matching the reader's GitHub theme
+    for theme in THEMES:
+        fig = make_volatility_figure(
+            daily_ret,
+            window=63,
+            base=BASE_ESTIMATOR,
+            theme=theme,
+            title=f"{market}: minimum-variance portfolio",
+        )
+        suffix = "" if theme == "light" else f"_{theme}"
+        fig_path = PATH_FIG / f"volatility_{market}{suffix}.png"
+        fig.savefig(fig_path, dpi=150, facecolor=fig.get_facecolor())
+        plt.close(fig)
 
     start, end = daily_ret.index[0], daily_ret.index[-1]
     rebalances = read_rebalance(con, market, estimators, start, end)

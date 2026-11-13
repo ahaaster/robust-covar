@@ -1,8 +1,9 @@
 [project]
 name = "robust-covar"
-version = "0.1.0"
-description = "Add your description here"
+version = "0.2.0"
+description = "Does a better (robust) covariance estimate give a lower-risk portfolio out of sample?"
 readme = "README.md"
+license = "MIT"
 authors = [
     { name = "Arnaud van Haaster", email = "git.8gsk7@passmail.net" }
 ]
@@ -12,7 +13,6 @@ dependencies = [
     "matplotlib>=3.11.2",
     "numpy>=2.5.4",
     "pandas>=3.1.1",
-    "requests>=2.34.2",
     "scikit-learn>=1.9.1",
 ]
 
@@ -21,6 +21,7 @@ app = [
     "streamlit>=1.67.0",
 ]
 data = [
+    "requests>=2.34.2",
     "tqdm>=4.70.1",
     "yfinance>=1.8.0",
 ]

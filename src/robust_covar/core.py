@@ -1,14 +1,11 @@
 import jax
 import numpy as np
-import pandas as pd
 import jax.numpy as jnp
 
 from jax import lax, vmap
-from functools import partial
 from sklearn.covariance import LedoitWolf
 
 QN_CONSTANT = 2.21914  # = 1 / (sqrt(2) * Phi^-1(5/8))
-MAD_CONSTANT = 1.4826
 
 
 def sample_cov(logret):
@@ -19,12 +16,6 @@ def ledoit_wolf_cov(logret):
     return LedoitWolf().fit(logret).covariance_
 
 
-def median_absolute_deviation(logret, median=None):
-    if median is None:
-        median = jnp.median(logret, axis=0)
-    return MAD_CONSTANT * jnp.median(jnp.abs(logret - median), axis=0)
-
-
 def qn_scale(series, bisection_steps: int = 32):
     series = jnp.sort(series)
     T = series.shape[0]
@@ -33,8 +24,6 @@ def qn_scale(series, bisection_steps: int = 32):
 
     def pairs_within(distance):
         upper = jnp.searchsorted(series, series + distance, side="right", method="sort")
-        # lower = jnp.searchsorted(series, series - distance, side="left")
-        # return (jnp.sum(upper - lower) - T) // 2
         return jnp.sum(upper - jnp.arange(T) - 1)
 
     def bisection_step(_, bounds):
@@ -49,61 +38,15 @@ def qn_scale(series, bisection_steps: int = 32):
     return high
 
 
-# def qn_factor(T):
-#     gauss_factor = 2.2219
-#     small_sample = {
-#         2: 0.399,
-#         3: 0.994,
-#         4: 0.512,
-#         5: 0.844,
-#         6: 0.611,
-#         7: 0.857,
-#         8: 0.669,
-#         9: 0.872,
-#         10: 0.703,
-#         11: 0.886,
-#         12: 0.723,
-#     }
-#     if T in small_sample:
-#         sample = small_sample[T]
-#     elif T % 2 == 1:
-#         sample = T / (T + 1.4)
-#     else:
-#         sample = T / (T + 3.8)
-#     return gauss_factor * sample
-
 batched_qn = jax.jit(vmap(qn_scale, in_axes=1))
 
 
 def calc_qn(logret):
     logret = jnp.asarray(logret).reshape(logret.shape[0], -1)
-    # factor = qn_factor(logret.shape[0])
-    # return factor * vmap(qn_scale, in_axes=1)(returns)
     return np.asarray(QN_CONSTANT * batched_qn(logret))
 
 
-""" [PREVIOUS Qn implementation]
-def calc_qn(values, chunk_size: int = 128) -> np.ndarray:
-    # Q_n scale of each column in (T, N) array
-    values = np.atleast_2d(values.T)
-    values = values.astype(np.float32)
-    T = values.shape[1]
-
-    half_way = T // 2 + 1
-    k = half_way * (half_way - 1) // 2
-    row_idx, col_idx = np.triu_indices(T, k=1)
-    scales = np.empty(values.shape[0])
-
-    for start in range(0, values.shape[0], chunk_size):
-        block = values[start : start + chunk_size]
-        pair_distance = np.abs(block[:, row_idx] - block[:, col_idx])
-        kth_smallest = np.partition(pair_distance, k - 1, axis=1)[:, k - 1]
-        scales[start : start + chunk_size] = QN_CONSTANT * kth_smallest
-    return scales
-"""
-
-
-def gk_corr(logret) -> [np.ndarray, np.ndarray]:
+def gk_corr(logret) -> tuple[np.ndarray, np.ndarray]:
     T, N = logret.shape
     scales = calc_qn(logret)
     assert (scales > 0).all()  # Divide by zero precaution
