@@ -1608,7 +1608,7 @@ wheels = [
 
 [[package]]
 name = "robust-covar"
-version = "0.2.0"
+version = "0.2.1"
 source = { editable = "." }
 dependencies = [
     { name = "jax" },
@@ -1616,6 +1616,7 @@ dependencies = [
     { name = "numpy" },
     { name = "pandas" },
     { name = "scikit-learn" },
+    { name = "tabulate" },
 ]
 
 [package.optional-dependencies]
@@ -1633,7 +1634,6 @@ dev = [
     { name = "black" },
     { name = "pytest" },
     { name = "ruff" },
-    { name = "tabulate" },
 ]
 
 [package.metadata]
@@ -1645,6 +1645,7 @@ requires-dist = [
     { name = "requests", marker = "extra == 'data'", specifier = ">=2.34.2" },
     { name = "scikit-learn", specifier = ">=1.9.1" },
     { name = "streamlit", marker = "extra == 'app'", specifier = ">=1.67.0" },
+    { name = "tabulate", specifier = ">=0.10.0" },
     { name = "tqdm", marker = "extra == 'data'", specifier = ">=4.70.1" },
     { name = "yfinance", marker = "extra == 'data'", specifier = ">=1.8.0" },
 ]
@@ -1655,7 +1656,6 @@ dev = [
     { name = "black", specifier = ">=26.10.1" },
     { name = "pytest", specifier = ">=9.2.0" },
     { name = "ruff", specifier = ">=0.17.4" },
-    { name = "tabulate", specifier = ">=0.10.0" },
 ]
 
 [[package]]

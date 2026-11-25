@@ -4,7 +4,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.ticker import PercentFormatter, FixedLocator, NullFormatter
 
-# One validated categorical palette, stepped per background (colour-blind safe on both)
 ESTIMATOR_COLOURS = {"sample": "#2a78d6", "ledoit_wolf": "#eb6834", "robust": "#1baf7a"}
 ESTIMATOR_COLOURS_DARK = {
     "sample": "#3987e5",
@@ -28,6 +27,7 @@ THEMES = {
 }
 CRISES = {
     "GFC": ("2008-09-15", "2009-03-09"),
+    "Black Monday": ("2011-08-01", "2011-10-03"),
     "COVID": ("2020-02-20", "2020-04-30"),
     "2022": ("2022-01-03", "2022-10-12"),
 }
@@ -36,7 +36,7 @@ CRISES = {
 def shade_crises(ax, alpha: float = 0.15):
     for name, (start, end) in CRISES.items():
         start, end = pd.Timestamp(start), pd.Timestamp(end)
-        ax.axvspan(start, end, color="grey", alpha=alpha, linewidth=0)
+        ax.axvspan(start, end, color="grey", alpha=alpha, linewidth=0, zorder=0)
 
 
 def plot_volatility(

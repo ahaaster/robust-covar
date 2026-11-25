@@ -2,7 +2,7 @@
 
 **Does a better (robust) covariance estimate give a lower-risk portfolio out of sample?**
 
-<!-- > **Status: work in progress.** Results for all three estimators are final; the dashboard and significance tests are still to come. -->
+<!-- > **Status: work in progress.** Results for all three estimators are final; the significance tests are still to come. -->
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="figures/volatility_euronext_dark.png">
@@ -22,20 +22,21 @@ The pre-specified robust estimator raises risk: it is about 10% more volatile th
 ### Summary, out of sample 2008–2026
 
 Euronext (N = 67):
-
+<!-- euronext_table:start -->
 | estimator   |   pooled_vol |   vol_ratio |   median_monthly_ratio |   median_leverage |   max_leverage |
 |:------------|-------------:|------------:|-----------------------:|------------------:|---------------:|
 | ledoit_wolf |        0.124 |       0.979 |                  0.98  |             2.487 |          4.06  |
 | robust      |        0.22  |       1.746 |                  1.101 |             3.294 |        108.54  |
 | sample      |        0.126 |       1     |                  1     |             2.678 |          4.322 |
-
+<!-- euronext_table:end -->
 S&P 500 (N = 67):
-
+<!-- sp500_table:start -->
 | estimator   |   pooled_vol |   vol_ratio |   median_monthly_ratio |   median_leverage |   max_leverage |
 |:------------|-------------:|------------:|-----------------------:|------------------:|---------------:|
 | ledoit_wolf |        0.14  |       0.975 |                  0.978 |             2.659 |          3.635 |
 | robust      |        0.186 |       1.298 |                  1.1   |             3.43  |         42.449 |
 | sample      |        0.143 |       1     |                  1     |             2.871 |          4.688 |
+<!-- sp500_table:end -->
 
 `pooled_vol`: annualised standard deviation of all daily portfolio returns. `vol_ratio`: pooled volatility relative to the sample-covariance portfolio. `median_monthly_ratio`: median over rebalances of the 21-day volatility ratio to the sample-covariance portfolio. Leverage is gross leverage, `sum |w_i|`.
 

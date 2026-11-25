@@ -12,9 +12,26 @@ from robust_covar.storage import connect, read_daily_returns, read_rebalance
 PROJECT_DIR = Path(__file__).resolve().parents[1]
 PATH_FIG = PROJECT_DIR / "figures"
 PATH_DB = PROJECT_DIR / "results" / "backtest.sqlite"
+PATH_README = PROJECT_DIR / "README.md"
 
 MARKETS = ("sp500", "euronext")
 BASE_ESTIMATOR = "sample"
+
+
+def write_table_into_readme(table_name: str, table_markdown: str) -> None:
+    readme_text = PATH_README.read_text(encoding="utf-8")
+
+    start_marker, end_marker = (
+        f"<!-- {table_name}:start -->",
+        f"<!-- {table_name}:end -->",
+    )
+    before, rest = readme_text.split(start_marker)
+    _, after = rest.split(end_marker)
+
+    PATH_README.write_text(
+        f"{before}{start_marker}\n{table_markdown}\n{end_marker}{after}",
+        encoding="utf-8",
+    )
 
 
 def available_estimators(con: Connection, market: str) -> list[str]:
@@ -60,8 +77,9 @@ def plot_market(con: Connection, market: str) -> Path | None:
     rebalances = read_rebalance(con, market, estimators, start, end)
     summary = summary_table(daily_ret, rebalances)
     summary_md = summary.to_markdown()
-    # Save the summary to markdown file
+    # Save the summary to markdown file and write its results in README
     (PATH_FIG / f"summary_{market}.md").write_text(summary_md)
+    write_table_into_readme(f"{market}_table", summary_md)
 
     return fig_path
 

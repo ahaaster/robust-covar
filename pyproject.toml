@@ -1,6 +1,6 @@
 [project]
 name = "robust-covar"
-version = "0.2.0"
+version = "0.2.1"
 description = "Does a better (robust) covariance estimate give a lower-risk portfolio out of sample?"
 readme = "README.md"
 license = "MIT"
@@ -14,6 +14,7 @@ dependencies = [
     "numpy>=2.5.4",
     "pandas>=3.1.1",
     "scikit-learn>=1.9.1",
+    "tabulate>=0.10.0",
 ]
 
 [project.optional-dependencies]
@@ -35,7 +36,6 @@ dev = [
     "black>=26.10.1",
     "pytest>=9.2.0",
     "ruff>=0.17.4",
-    "tabulate>=0.10.0",
 ]
 
 [tool.black]
